@@ -14,4 +14,8 @@ router.get('/cmt/all', auth, cmtCtrl.getAll);
 router.post('/', auth, postCtrl.postOne);
 router.post('/:id/cmt', auth, cmtCtrl.postOne);
 
+router.put('/:id', auth, postCtrl.editOne)
+
+router.delete('/:id', auth, postCtrl.deleteOne)
+
 module.exports = router;

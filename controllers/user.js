@@ -12,6 +12,12 @@ exports.getUsers = (req, res, next) => {
     .catch((error) => res.status(401).json({error}), db.User.sync())
 }
 
+exports.getUser = (req, res, next) => {
+  db.User.findOne({where: {id: req.params.id}})
+    .then((user) => res.status(200).json({user}))
+    .catch(error => res.status(500).json({message: error}))
+}
+
 exports.login = (req, res, next) => {
   db.User.findOne({where: { email: req.body.email} })
     .then((user) => {
