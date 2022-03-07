@@ -77,3 +77,7 @@ exports.signup = (req, res, next) => {
     )
     .catch(error => res.status(500).json({error}))
 }
+
+exports.editUser = (req, res, next) => {
+
+}

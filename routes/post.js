@@ -15,6 +15,7 @@ router.post('/', auth, multer, postCtrl.postOne);
 router.post('/:id/cmt', auth, cmtCtrl.postOne);
 
 router.put('/:id', auth, multer, postCtrl.editOne)
+router.put('/cmt/:id', auth, cmtCtrl.editOne)
 
 router.delete('/:id', auth, postCtrl.deleteOne)
 router.delete('/cmt/:id', auth, cmtCtrl.deleteOne)

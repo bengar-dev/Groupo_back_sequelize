@@ -23,7 +23,29 @@ exports.postOne = (req, res, next) => {
   })
   comment.save()
     .then(() => res.status(200).json({message: 'Comment posted'}))
-    .catch(error => res.status(401).json({error}))
+    .catch(error => res.status(401).json({message: error}))
+}
+
+exports.editOne =  (req, res, next) => {
+  const commentObject = {
+    msg: sanitizer.escape(req.body.msg)
+  }
+  db.Cmt.findOne({where: {id: req.params.id}})
+    .then((comment) => {
+      if(!comment) {
+        return res.status(401).json({message: `Comment doesn't exist`})
+      }
+      let token = req.headers.authorization.split(' ')[1];
+      let decodedToken = jwt.verify(token, 'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA');
+      let userId = decodedToken.userId;
+      if (comment.userId !== userId){
+        return res.status(401).json({message: `You are not the autor of this comment`})
+      }
+      db.Cmt.update({ ...commentObject }, {where: {id: req.params.id}})
+        .then(() => res.status(200).json({message:'Success'}))
+        .catch(error => res.status(401).json({message: error}))
+    })
+    .catch(error => res.status(500).json({message: error}))
 }
 
 exports.deleteOne = (req, res, next) => {
