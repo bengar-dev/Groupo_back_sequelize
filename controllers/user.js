@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const sanitizer = require('sanitizer')
 const { Sequelize } = require('sequelize')
+const fs = require('fs')
 
 const db = require('../models')
 
@@ -79,5 +80,62 @@ exports.signup = (req, res, next) => {
 }
 
 exports.editUser = (req, res, next) => {
+  console.log(req.body.img)
+  db.User.findOne({where: {id: req.params.id}})
+    .then((user) => {
+      if(!user) {
+        return res.status(401).json({message: `User doesn't exist`})
+      }
+      let token = req.headers.authorization.split(' ')[1];
+      let decodedToken = jwt.verify(token, 'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA');
+      let userId = decodedToken.userId;
+      if (user.id !== userId){
+        return res.status(401).json({message: `This is not your profil`})
+      }
+      const filename = user.avatar.split('/images/')[1]
+      console.log(filename)
+      const userObject = req.file ? {
+        ...req.body,
+        avatar: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+      } : {
+        ...req.body
+      }
+      db.User.update({...userObject}, {where: {id: req.params.id}})
+        .then(() => {
+          if(req.file) {
+            fs.unlink(`images/${filename}`, (err) => {
+              if(err) throw err;
+            })
+          }
+          return res.status(200).json({message: 'Success'})
+        })
+        .catch(error => res.status(500).json({message: error}))
+    })
+    .catch(error => res.status(500).json({message: error}))
+}
 
+exports.delUser = (req, res, next) => {
+  db.User.findOne({where: {id: req.params.id}})
+    .then((user) => {
+      if(!user) {
+        return res.status(401).json({message: `User doesn't exist`})
+      }
+      let token = req.headers.authorization.split(' ')[1];
+      let decodedToken = jwt.verify(token, 'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA');
+      let userId = decodedToken.userId;
+      if (user.id !== userId){
+        return res.status(401).json({message: `This is not your profil`})
+      }
+      bcrypt.compare(req.body.password, user.password)
+        .then((valid) => {
+          if(!valid) {
+            return res.status(401).json({message: 'Password inccorect'})
+          }
+          db.User.destroy({where: {id: req.params.id}})
+            .then(() => res.status(200).json({message: 'Success'}))
+            .catch(error => res.status(500).json({message: error}))
+        })
+        .catch(error => res.status(500).json({message: error}))
+    })
+    .catch(error => res.status(500).json({message: error}))
 }
