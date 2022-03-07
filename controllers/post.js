@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const sanitizer = require('sanitizer')
 const { Sequelize } = require('sequelize')
+const fs = require('fs')
 
 const db = require('../models')
 
@@ -11,7 +12,8 @@ exports.getAll = (req, res, next) => {
     include: [{
       model: db.User,
       attributes: {exclude: ['password', 'admin', 'createdAt', 'updatedAt']}
-    }]
+    }],
+    order: [['postedat', 'DESC']]
   })
     .then((posts) => res.status(200).json(posts))
     .catch((error) => res.status(401).json({error}), db.Post.sync())
@@ -28,7 +30,6 @@ exports.getOne = (req, res, next) => {
 }
 
 exports.postOne = (req, res, next) => {
-  console.log(req.body)
   const postObject = req.file ?
   {
     ...req.body,
@@ -36,6 +37,7 @@ exports.postOne = (req, res, next) => {
     img: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   } : {
     ...req.body,
+    img: null,
     msg: sanitizer.escape(req.body.content)
   }
   const post = new db.Post({
@@ -59,7 +61,26 @@ exports.editOne = (req, res, next) => {
       if (post.userId !== userId){
         return res.status(401).json({message: `You are not the autor of this publication`})
       }
-      return res.status(200).json({message: 'A continué avec le front'})
+      let filename = post.img
+      if(filename) {
+        filename = post.img.split('/images/')[1]
+      }
+      const postObject = req.file ? {
+        ...req.body,
+        img: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+      } : {
+        ...req.body
+      }
+      db.Post.update({ ...postObject }, {where: {id: req.params.id}})
+        .then(() => {
+          if(filename && req.body.img !== undefined) {
+            fs.unlink(`images/${filename}`, (err) => {
+              if(err) throw err;
+            })
+          }
+          return res.status(200).json({message: 'Success'})
+        })
+        .catch(error => res.status(500).json({error}))
     })
     .catch(error => res.status(500).json({message: error}))
 }
@@ -77,11 +98,18 @@ exports.deleteOne = (req, res, next) => {
         return res.status(401).json({message: `You are not the autor of this publication`})
       }
       let filename = null
+      console.log('first ' + filename)
       if (post.img !== null) {
         filename = post.img.split('/images/')[1]
+        console.log('second ' + filename)
       }
       db.Post.destroy({where: {id: req.params.id}})
         .then(() => {
+          if(filename) {
+            fs.unlink(`images/${filename}`, (err => {
+              if(err) throw err;
+            }))
+          }
           db.Cmt.destroy({where: {postId: req.params.id}})
             .then(() => res.status(201).json({message: 'Success'}))
             .catch(error => res.status(401).json({message: error}))
