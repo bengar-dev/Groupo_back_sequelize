@@ -118,3 +118,26 @@ exports.deleteOne = (req, res, next) => {
     })
     .catch(error => res.status(500).json({message: error}))
 }
+
+exports.postLike = (req, res, next) => {
+  db.Post.findOne({where: {id: req.params.id}})
+    .then((post) => {
+      if(!post) {
+        return res.status(401).json({message: `Publication doesn't exist`})
+      }
+      const userLike = JSON.parse(post.userLike)
+      const foundUser = userLike.findIndex((a) => a == req.body.userId)
+      if(foundUser == -1 && req.body.like == 1) {
+        const pushUser = userLike.push(req.body.userId)
+      }
+      if(foundUser > -1 && req.body.like == 0) {
+        const pushUser = userLike.splice(foundUser, 1)
+      }
+      const jsonUserLike = JSON.stringify(userLike)
+      const likes = userLike.length
+      db.Post.update({userLike: jsonUserLike, countLike: likes}, {where: {id: req.params.id}})
+        .then(() => res.status(200).json({message: 'Success'}))
+        .catch(error => res.status(500).json({message: error}))
+    })
+    .catch(error => res.status(500).json({message: error}))
+}

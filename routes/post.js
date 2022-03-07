@@ -13,6 +13,7 @@ router.get('/cmt/all', auth, cmtCtrl.getAll);
 
 router.post('/', auth, multer, postCtrl.postOne);
 router.post('/:id/cmt', auth, cmtCtrl.postOne);
+router.post('/:id/like', auth, postCtrl.postLike)
 
 router.put('/:id', auth, multer, postCtrl.editOne)
 router.put('/cmt/:id', auth, cmtCtrl.editOne)
