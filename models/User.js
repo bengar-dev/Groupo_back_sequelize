@@ -37,7 +37,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
     avatar: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      defaultValue: ''
+      defaultValue: 'https://www.belin.re/wp-content/uploads/2018/11/default-avatar.png'
     },
     admin: {
       type: DataTypes.BOOLEAN,

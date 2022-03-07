@@ -102,7 +102,7 @@ exports.editUser = (req, res, next) => {
       }
       db.User.update({...userObject}, {where: {id: req.params.id}})
         .then(() => {
-          if(req.file) {
+          if(req.file && filename !== undefined) {
             fs.unlink(`images/${filename}`, (err) => {
               if(err) throw err;
             })
@@ -132,7 +132,15 @@ exports.delUser = (req, res, next) => {
             return res.status(401).json({message: 'Password inccorect'})
           }
           db.User.destroy({where: {id: req.params.id}})
-            .then(() => res.status(200).json({message: 'Success'}))
+            .then(() => {
+              db.Post.destroy({where: {userId: req.params.id}})
+                .then(() => {
+                  db.Cmt.destroy({where: {userId: req.params.id}})
+                    .then(() => res.status(200).json({message: 'Success'}))
+                    .catch(error => res.status(500).json({message: error}))
+                })
+                .catch(error => res.status(500).json({message: error}))
+            })
             .catch(error => res.status(500).json({message: error}))
         })
         .catch(error => res.status(500).json({message: error}))
