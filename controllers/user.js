@@ -34,7 +34,7 @@ exports.login = (req, res, next) => {
             userId: user.id,
             admin: user.admin,
             token: jwt.sign(
-              {userId: user.id},
+              {userId: user.id, admin: user.admin},
               'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA',
               {expiresIn: '24h'}
             )
@@ -133,15 +133,19 @@ exports.delUser = (req, res, next) => {
           }
           db.User.destroy({where: {id: req.params.id}})
             .then(() => {
-              db.Post.destroy({where: {userId: req.params.id}})
+              /*db.Post.destroy({where: {userId: req.params.id}})
                 .then(() => {
                   db.Cmt.destroy({where: {userId: req.params.id}})
                     .then(() => res.status(200).json({message: 'Success'}))
                     .catch(error => res.status(500).json({message: error}))
                 })
-                .catch(error => res.status(500).json({message: error}))
+                .catch(error => res.status(500).json({message: error}))*/
+                return res.status(200).json({message: 'ok'})
             })
-            .catch(error => res.status(500).json({message: error}))
+            .catch(error => {
+              console.log(error)
+              res.status(500).json({message: error})
+            })
         })
         .catch(error => res.status(500).json({message: error}))
     })

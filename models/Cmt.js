@@ -6,8 +6,8 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
   class Cmt extends Model {
     static associate(models) {
-      models.Cmt.belongsTo(models.Post, { foreignKey: 'postId'})
-      models.Cmt.belongsTo(models.User, { foreignKey: 'userId'})
+     models.Cmt.belongsTo(models.Post, { foreignKey: 'postId', onDelete: 'cascade'})
+     models.Cmt.belongsTo(models.User, { foreignKey: 'userId', onDelete: 'cascade'})
     }
   }
 

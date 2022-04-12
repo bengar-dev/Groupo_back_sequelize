@@ -6,13 +6,13 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
   class Post extends Model {
     static associate(models) {
-      models.Post.belongsTo(models.User, { foreignKey: 'userId'})
-      models.Post.hasMany(models.Cmt, { foreignKey: 'postId'})
+      models.Post.belongsTo(models.User, { foreignKey: 'userId', onDelete: 'cascade'})
+      models.Post.hasMany(models.Cmt)
     }
   }
 
   Post.init({
-    id: {
+    postId: {
       type: DataTypes.BIGINT(11),
       autoIncrement: true,
       primaryKey: true

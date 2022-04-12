@@ -11,6 +11,7 @@ exports.getAll = (req, res, next) => {
       model: db.User,
       attributes: {exclude: ['password', 'admin', 'createdAt', 'updatedAt']}
     }],
+    order: [['createdAt', 'DESC']]
   })
     .then((posts) => res.status(200).json(posts))
     .catch((error) => res.status(401).json({error}), db.Cmt.sync())
@@ -22,8 +23,11 @@ exports.postOne = (req, res, next) => {
     postId: req.params.id
   })
   comment.save()
-    .then(() => res.status(200).json({message: 'Comment posted'}))
-    .catch(error => res.status(401).json({message: error}))
+    .then((cmt) => res.status(200).json({cmt}))
+    .catch(error => {
+      console.log(error)
+      res.status(401).json({message: error})
+    })
 }
 
 exports.editOne =  (req, res, next) => {
@@ -54,10 +58,16 @@ exports.deleteOne = (req, res, next) => {
       if(!comment) {
         return res.status(401).json({message: `Comment doens't exist`})
       }
+      let cmtUserId = comment.userId
       let token = req.headers.authorization.split(' ')[1];
       let decodedToken = jwt.verify(token, 'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA');
-      let userId = decodedToken.userId;
-      if (comment.userId !== userId){
+      let admin = decodedToken.admin
+      let userId = decodedToken.userId
+      console.log(cmtUserId)
+      if(admin) {
+        cmtUserId = userId
+      }
+      if (cmtUserId !== userId){
         return res.status(401).json({message: `You are not the autor of this comment`})
       }
       db.Cmt.destroy({where: {id: req.params.id}})

@@ -33,23 +33,26 @@ exports.postOne = (req, res, next) => {
   const postObject = req.file ?
   {
     ...req.body,
-    msg: sanitizer.escape(req.body.content),
+    postedat: new Date(),
+    msg: sanitizer.escape(req.body.msg),
     img: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
   } : {
     ...req.body,
+    postedat: new Date(),
     img: null,
-    msg: sanitizer.escape(req.body.content)
+    msg: sanitizer.escape(req.body.msg)
   }
   const post = new db.Post({
     ...postObject
   })
   post.save()
-    .then(() => res.status(200).json({message: 'Success'}))
+    .then(data => res.status(200).json({data}))
     .catch(error => res.status(401).json({message: error}))
 }
 
 exports.editOne = (req, res, next) => {
-  db.Post.findOne({where: {id: req.params.id}})
+  console.log(req.body)
+  db.Post.findOne({where: {postId: req.params.id}})
     .then((post) => {
       if(!post) {
         return res.status(401).json({message: `Publication doesn't exist`})
@@ -69,11 +72,12 @@ exports.editOne = (req, res, next) => {
         ...req.body,
         img: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
       } : {
-        ...req.body
+        ...req.body,
+        img: req.body.delimg && ''
       }
-      db.Post.update({ ...postObject }, {where: {id: req.params.id}})
+      db.Post.update({ ...postObject }, {where: {postId: req.params.id}})
         .then(() => {
-          if(filename && req.body.img !== undefined) {
+          if(filename && req.file || req.body.delimg) {
             fs.unlink(`images/${filename}`, (err) => {
               if(err) throw err;
             })
@@ -86,24 +90,27 @@ exports.editOne = (req, res, next) => {
 }
 
 exports.deleteOne = (req, res, next) => {
-  db.Post.findOne({where: {id: req.params.id}})
+  db.Post.findOne({where: {postId: req.params.id}})
     .then((post) => {
       if(!post) {
         return res.status(401).json({message: `Publication doesn't exist`})
       }
+      let postUserId = post.userId
       let token = req.headers.authorization.split(' ')[1];
       let decodedToken = jwt.verify(token, 'EZJIAOEJZHIOEJZAIOEJZAIOEZAJUIEOZAJUEIOZA');
-      let userId = decodedToken.userId;
-      if (post.userId !== userId){
+      let admin = decodedToken.admin
+      let userId = decodedToken.userId
+      if(admin) {
+        postUserId = userId
+      }
+      if (postUserId !== userId){
         return res.status(401).json({message: `You are not the autor of this publication`})
       }
       let filename = null
-      console.log('first ' + filename)
       if (post.img !== null) {
         filename = post.img.split('/images/')[1]
-        console.log('second ' + filename)
       }
-      db.Post.destroy({where: {id: req.params.id}})
+      db.Post.destroy({where: {postId: req.params.id}})
         .then(() => {
           if(filename) {
             fs.unlink(`images/${filename}`, (err => {
@@ -120,8 +127,9 @@ exports.deleteOne = (req, res, next) => {
 }
 
 exports.postLike = (req, res, next) => {
-  db.Post.findOne({where: {id: req.params.id}})
+  db.Post.findOne({where: {postId: req.params.id}})
     .then((post) => {
+      console.log(post)
       if(!post) {
         return res.status(401).json({message: `Publication doesn't exist`})
       }
@@ -135,8 +143,8 @@ exports.postLike = (req, res, next) => {
       }
       const jsonUserLike = JSON.stringify(userLike)
       const likes = userLike.length
-      db.Post.update({userLike: jsonUserLike, countLike: likes}, {where: {id: req.params.id}})
-        .then(() => res.status(200).json({message: 'Success'}))
+      db.Post.update({userLike: jsonUserLike, countLike: likes}, {where: {postId: req.params.id}})
+        .then(() => res.status(200).json({post}))
         .catch(error => res.status(500).json({message: error}))
     })
     .catch(error => res.status(500).json({message: error}))
